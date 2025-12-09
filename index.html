@@ -81,7 +81,6 @@
 
     const TOTAL = 200;
 
-    // Creamos los 200 círculos
     function crearCirculos() {
         const cont = document.getElementById("cuadricula");
         cont.innerHTML = "";
@@ -103,19 +102,18 @@
             const texto = await res.text();
             const filas = texto.trim().split("\n").map(f => f.split(","));
 
-            // ignoramos la fila 0 (títulos)
             for (let i = 1; i < filas.length; i++) {
                 const cols = filas[i];
 
-                const numero = parseInt(cols[0]); // primera columna es el número
+                const dni = cols[0]?.trim();
+                const nombre = cols[1]?.trim();
+                const contacto = cols[2]?.trim();
+                const numero = parseInt(cols[3]);  // AHORA SÍ: esta es la rifa
 
-                if (!isNaN(numero) && numero >= 1 && numero <= TOTAL) {
-                    // Verificar si las 4 columnas están completas
-                    const completas = cols[0] && cols[1] && cols[2] && cols[3];
+                const completas = dni && nombre && contacto && numero;
 
-                    if (completas) {
-                        document.getElementById("num" + numero).classList.add("completo");
-                    }
+                if (completas && numero >= 1 && numero <= TOTAL) {
+                    document.getElementById("num" + numero).classList.add("completo");
                 }
             }
 
