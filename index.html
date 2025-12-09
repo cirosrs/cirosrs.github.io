@@ -8,11 +8,30 @@
     body {
         background: #f4f4f4;
         font-family: Arial, sans-serif;
+        padding: 20px;
+    }
+
+    /* LOADER */
+    #loader {
+        width: 60px;
+        height: 60px;
+        border: 6px solid #ccc;
+        border-top-color: #4caf50;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 40px auto;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* CONTENEDOR DE LOS NÚMEROS */
+    #numeros {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        padding: 20px;
         gap: 12px;
+        margin-top: 20px;
     }
 
     .numero {
@@ -40,6 +59,9 @@
 </head>
 <body>
 
+<div id="loader"></div>
+<div id="numeros"></div>
+
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6hgJhts2N753Nujhn8XwjCdk4lZbqIy9XiMRc7B56VOBLChAec0v43Y5mm4Ec1JBP9-KHTfdn3l93/pub?gid=0&single=true&output=csv";
 
@@ -51,9 +73,10 @@ fetch(CSV_URL)
     .then(r => r.text())
     .then(csv => {
         const rows = parseCSV(csv);
+        const contenedor = document.getElementById("numeros");
 
         rows.forEach((fila, i) => {
-            if (i === 0) return; // saltar encabezado
+            if (i === 0) return; // encabezado
 
             const numero = fila[0];
             const campos = fila.slice(1, 5);
@@ -63,13 +86,16 @@ fetch(CSV_URL)
             div.className = "numero" + (completo ? " completo" : "");
             div.textContent = numero;
 
-            document.body.appendChild(div);
+            contenedor.appendChild(div);
         });
+
+        document.getElementById("loader").style.display = "none";
     })
     .catch(() => {
-        const err = document.createElement("p");
-        err.textContent = "Error al conectar con Google Sheets. Google está en modo lunes.";
-        document.body.appendChild(err);
+        document.getElementById("loader").style.display = "none";
+        const error = document.createElement("p");
+        error.textContent = "Error al conectar con Google Sheets. Perfecto.";
+        document.body.appendChild(error);
     });
 </script>
 
