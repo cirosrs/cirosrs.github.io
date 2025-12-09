@@ -11,7 +11,6 @@
         padding: 20px;
     }
 
-    /* LOADER */
     #loader {
         width: 60px;
         height: 60px;
@@ -21,11 +20,11 @@
         animation: spin 1s linear infinite;
         margin: 40px auto;
     }
+
     @keyframes spin {
         to { transform: rotate(360deg); }
     }
 
-    /* CONTENEDOR DE LOS NÚMEROS */
     #numeros {
         display: flex;
         flex-wrap: wrap;
@@ -63,7 +62,7 @@
 <div id="numeros"></div>
 
 <script>
-// NUEVO CSV (actualizado con tu link)
+// ESTE ES EL LINK QUE FUNCIONA (confirmado)
 const CSV_URL = "https://docs.google.com/spreadsheets/d/1tIPI57LEoj73SmYj31A_vrXQNUTO-PUzgZQpEg2CQ-o/export?format=csv&gid=0";
 
 function parseCSV(text) {
@@ -79,10 +78,15 @@ fetch(CSV_URL)
         rows.forEach((fila, i) => {
             if (i === 0) return; // encabezado
 
-            const numero = fila[0];    // N_rifa
-            const campos = fila.slice(1, 5); // DNI, Nombre, Contacto
+            const numero = fila[3];         // N_rifa (columna 4)
+            const dni = fila[0];
+            const nombre = fila[1];
+            const contacto = fila[2];
 
-            const completo = campos.every(c => c.trim() !== "");
+            const completo = dni.trim() !== "" &&
+                             nombre.trim() !== "" &&
+                             contacto.trim() !== "" &&
+                             numero.trim() !== "";
 
             const div = document.createElement("div");
             div.className = "numero" + (completo ? " completo" : "");
@@ -96,7 +100,7 @@ fetch(CSV_URL)
     .catch(() => {
         document.getElementById("loader").style.display = "none";
         const error = document.createElement("p");
-        error.textContent = "Connection failure. Google Sheets otra vez haciendo de las suyas.";
+        error.textContent = "Connection failure. Google decidió no colaborar.";
         document.body.appendChild(error);
     });
 </script>
