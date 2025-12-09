@@ -2,47 +2,97 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Personas del Google Sheets</title>
+    <title>Rifas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #fafafa;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 15px;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .numero {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            transition: 0.2s;
+        }
+
+        .vendido {
+            background: #4caf50;
+            color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+    </style>
 </head>
 <body>
-    <h1>Personas</h1>
-    <table id="tabla" border="1" cellpadding="5"></table>
+
+<h1>Rifas disponibles</h1>
+<p>Los números verdes ya están vendidos.</p>
+
+<div class="grid" id="grid"></div>
 
 <script>
 const sheetID = "1MnsiIVJMz5APiHhynwdYZ2bfgLiY-OxEKiGA_uouJXU";
 const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
 
+function crearCirculos(vendidos) {
+    const grid = document.getElementById("grid");
+    grid.innerHTML = "";
+
+    for (let i = 1; i <= 200; i++) {
+        const div = document.createElement("div");
+        div.className = "numero";
+
+        if (vendidos.includes(i)) {
+            div.classList.add("vendido");
+        }
+
+        div.textContent = i;
+        grid.appendChild(div);
+    }
+}
+
 fetch(url)
   .then(r => r.text())
   .then(txt => {
       const json = JSON.parse(txt.substring(47, txt.length - 2));
-      const tabla = document.getElementById("tabla");
+      const vendidos = [];
 
-      // Encabezados
-      const headers = json.table.cols.map(col => col.label);
-      const trHead = document.createElement("tr");
-      headers.forEach(h => {
-          const th = document.createElement("th");
-          th.textContent = h;
-          trHead.appendChild(th);
-      });
-      tabla.appendChild(trHead);
-
-      // Filas con las 4 celdas completas
       json.table.rows.forEach(fila => {
-          const valores = fila.c.map(c => c ? c.v : "");
+          const datos = fila.c.map(c => c ? c.v : "");
 
-          // condición: las 4 columnas no vacías
-          if (valores.length >= 4 && valores.slice(0,4).every(v => v !== "")) {
-              const tr = document.createElement("tr");
-              valores.slice(0,4).forEach(v => {
-                  const td = document.createElement("td");
-                  td.textContent = v;
-                  tr.appendChild(td);
-              });
-              tabla.appendChild(tr);
+          // Se necesitan 4 campos completos
+          if (datos.length >= 4 && datos.slice(0,4).every(v => v !== "")) {
+              const n = Number(datos[3]); // N_rifa está en la columna 4
+              if (!isNaN(n)) vendidos.push(n);
           }
       });
+
+      crearCirculos(vendidos);
+  })
+  .catch(() => {
+      alert("No se pudo conectar al Google Sheets. Publicalo en la web.");
   });
 </script>
 
