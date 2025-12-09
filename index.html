@@ -1,100 +1,75 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Rifas</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
+<meta charset="UTF-8">
+<title>Sorteo 200 Números</title>
 
-        h1 {
-            margin-bottom: 20px;
-            color: #333;
-        }
+<style>
+    body {
+        background: #f4f4f4;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 20px;
+        gap: 12px;
+    }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-            gap: 15px;
-            max-width: 900px;
-            margin: auto;
-        }
+    .numero {
+        width: 85px;
+        height: 85px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        font-weight: bold;
+        border: 3px solid #aaa;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
 
-        .numero {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: #d1d1d1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            transition: 0.2s;
-        }
+    .completo {
+        background: #4caf50;
+        border-color: #2d742f;
+        color: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+</style>
 
-        .vendido {
-            background: #4caf50;
-            color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        }
-    </style>
 </head>
 <body>
 
-<h1>Rifas</h1>
-<p>Los números verdes ya están vendidos.</p>
-
-<div class="grid" id="grid"></div>
-
 <script>
-// URL correcta para Google Sheets
-const API_URL = "https://docs.google.com/spreadsheets/d/1MnsiIVJMz5APiHhynwdYZ2bfgLiY-OxEKiGA_uouJXU/gviz/tq?gid=0&tqx=out:json";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6hgJhts2N753Nujhn8XwjCdk4lZbqIy9XiMRc7B56VOBLChAec0v43Y5mm4Ec1JBP9-KHTfdn3l93/pub?gid=0&single=true&output=csv";
 
-function mostrarNumeros(vendidos) {
-    const grid = document.getElementById("grid");
-    grid.innerHTML = "";
-
-    for (let i = 1; i <= 200; i++) {
-        const div = document.createElement("div");
-        div.className = "numero";
-        div.textContent = i;
-
-        if (vendidos.includes(i)) {
-            div.classList.add("vendido");
-        }
-
-        grid.appendChild(div);
-    }
+function parseCSV(text) {
+    return text.trim().split("\n").map(row => row.split(","));
 }
 
-fetch(API_URL)
+fetch(CSV_URL)
     .then(r => r.text())
-    .then(texto => {
-        const json = JSON.parse(texto.substring(47, texto.length - 2));
-        const vendidos = [];
+    .then(csv => {
+        const rows = parseCSV(csv);
 
-        json.table.rows.forEach(fila => {
-            const datos = fila.c.map(c => c ? c.v : "");
+        rows.forEach((fila, i) => {
+            if (i === 0) return; // saltar encabezado
 
-            // Las primeras 4 columnas deben estar completas
-            if (datos.length >= 4 && datos.slice(0,4).every(v => v !== "")) {
-                const numero = Number(datos[3]); // N_rifa es columna 4
-                if (!isNaN(numero)) vendidos.push(numero);
-            }
+            const numero = fila[0];
+            const campos = fila.slice(1, 5);
+            const completo = campos.every(c => c.trim() !== "");
+
+            const div = document.createElement("div");
+            div.className = "numero" + (completo ? " completo" : "");
+            div.textContent = numero;
+
+            document.body.appendChild(div);
         });
-
-        mostrarNumeros(vendidos);
     })
-    .catch(e => {
-        console.error(e);
-        alert("Error de conexión con Google Sheets. Asegurate de PUBLICAR la hoja en la web.");
+    .catch(() => {
+        const err = document.createElement("p");
+        err.textContent = "Error al conectar con Google Sheets. Google está en modo lunes.";
+        document.body.appendChild(err);
     });
 </script>
 
