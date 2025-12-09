@@ -2,83 +2,32 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Rifas en tiempo real</title>
-    <style>
-        body {
-            background: #f1f1f1;
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            text-align: center;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 8px;
-            max-width: 650px;
-            margin: auto;
-        }
-        .num {
-            padding: 10px;
-            border-radius: 8px;
-            background: white;
-            font-size: 18px;
-            border: 2px solid #ccc;
-        }
-        .vendido {
-            background: #ffb3b3;
-            text-decoration: line-through;
-            color: #900;
-            border-color: #900;
-        }
-    </style>
+    <title>Datos desde Google Sheets</title>
 </head>
 <body>
-
-<h1>Estado de Rifas (200 números)</h1>
-<div id="contenedor" class="grid"></div>
+    <h1>Datos del Google Sheets</h1>
+    <table id="tabla"></table>
 
 <script>
-const TOTAL_RIFAS = 200;
-const SHEET_ID = "1MnsiIVJMz5APiHhynwdYZ2bfgLiY-OxEKiGA_uouJXU";
-const RANGE = "A:D"; 
-const API = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Hoja1&range=${RANGE}`;
+const sheetID = "1MnsiIVJMz5APiHhynwdYZ2bfgLiY-OxEKiGA_uouJXU";
+const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
 
-async function cargar() {
-    try {
-        let res = await fetch(API);
-        let txt = await res.text();
-        let json = JSON.parse(txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+fetch(url)
+  .then(res => res.text())
+  .then(texto => {
+      const json = JSON.parse(texto.substring(47, texto.length - 2));
+      const tabla = document.getElementById("tabla");
 
-        let rows = json.table.rows;
-
-        // N_rifa es la columna D (índice 3)
-        let vendidos = rows
-            .map(r => r.c[3]?.v)
-            .filter(v => v !== null && v !== undefined)
-            .map(v => parseInt(v));
-
-        let contenedor = document.getElementById("contenedor");
-        contenedor.innerHTML = "";
-
-        for (let i = 1; i <= TOTAL_RIFAS; i++) {
-            let div = document.createElement("div");
-            div.className = "num";
-            div.innerText = i;
-
-            if (vendidos.includes(i)) {
-                div.classList.add("vendido");
-            }
-
-            contenedor.appendChild(div);
-        }
-
-    } catch (e) {
-        console.error("Error cargando datos", e);
-    }
-}
-
-cargar();
-setInterval(cargar, 5000);
+      json.table.rows.forEach(fila => {
+          const tr = document.createElement("tr");
+          fila.c.forEach(celda => {
+              const td = document.createElement("td");
+              td.textContent = celda ? celda.v : "";
+              tr.appendChild(td);
+          });
+          tabla.appendChild(tr);
+      });
+  });
 </script>
 
 </body>
