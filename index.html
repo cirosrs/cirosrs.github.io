@@ -63,7 +63,8 @@
 <div id="numeros"></div>
 
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6hgJhts2N753Nujhn8XwjCdk4lZbqIy9XiMRc7B56VOBLChAec0v43Y5mm4Ec1JBP9-KHTfdn3l93/pub?gid=0&single=true&output=csv";
+// NUEVO CSV (actualizado con tu link)
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQA63Z-H9RKQrD0Cubr0HcX3_FK5CTkjJTTzYO3shHFiSXA2U9qGAnMqQIgJ3cBEBJVExYypESNriOD/pub?gid=0&single=true&output=csv";
 
 function parseCSV(text) {
     return text.trim().split("\n").map(row => row.split(","));
@@ -78,8 +79,9 @@ fetch(CSV_URL)
         rows.forEach((fila, i) => {
             if (i === 0) return; // encabezado
 
-            const numero = fila[0];
-            const campos = fila.slice(1, 5);
+            const numero = fila[0];    // N_rifa
+            const campos = fila.slice(1, 5); // DNI, Nombre, Contacto
+
             const completo = campos.every(c => c.trim() !== "");
 
             const div = document.createElement("div");
@@ -94,7 +96,7 @@ fetch(CSV_URL)
     .catch(() => {
         document.getElementById("loader").style.display = "none";
         const error = document.createElement("p");
-        error.textContent = "Error al conectar con Google Sheets. Perfecto.";
+        error.textContent = "Connection failure. Google Sheets otra vez haciendo de las suyas.";
         document.body.appendChild(error);
     });
 </script>
