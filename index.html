@@ -1,66 +1,104 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Sorteo</title>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sorteo 200 - JSONP (sin CORS)</title>
 <style>
-    body { background: #f4f4f4; font-family: Arial; padding: 20px; }
-    #numeros { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-    .numero {
-        width: 85px; height: 85px; border-radius: 50%;
-        background: white; border: 3px solid #aaa;
-        display: flex; justify-content: center; align-items: center;
-        font-size: 22px; font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
-    .completo {
-        background: #4caf50; border-color: #2d742f; color: white;
-    }
+  body{font-family:Arial,Helvetica,sans-serif;background:#f5f7fa;margin:0;padding:20px;text-align:center;color:#222}
+  h1{margin:0 0 8px}
+  #loader{width:56px;height:56px;border:6px solid #e0e0e0;border-top-color:#2196f3;border-radius:50%;animation:spin 1s linear infinite;margin:28px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:12px;max-width:1100px;margin:16px auto}
+  .cell{width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e0e0e0;font-weight:700;font-size:18px;color:#222;border:2px solid rgba(0,0,0,0.06);box-shadow:0 2px 4px rgba(0,0,0,0.04);transition:transform .12s}
+  .cell.sold{background:#2e7d32;color:#fff;border-color:rgba(0,0,0,0.12);box-shadow:0 6px 14px rgba(46,125,50,0.18);transform:translateY(-3px)}
+  #status{color:#555;font-size:14px;margin-top:6px}
+  #err{display:none;background:#ffecec;color:#900;padding:10px;border-radius:6px;max-width:900px;margin:8px auto}
 </style>
 </head>
 <body>
-
-<div id="numeros"></div>
+  <h1>Sorteo — 1 a 200</h1>
+  <div id="loader" aria-hidden="true"></div>
+  <div id="err"></div>
+  <div id="grid" aria-live="polite"></div>
+  <div id="status"></div>
 
 <script>
-const CSV_URL =
-  "https://api.allorigins.win/raw?url=" +
-  encodeURIComponent(
-    "https://docs.google.com/spreadsheets/d/1tIPI57LEoj73SmYj31A_vrXQNUTO-PUzgZQpEg2CQ-o/export?format=csv&gid=0"
-  );
+(function(){
+  const SHEET_ID = "1tIPI57LEoj73SmYj31A_vrXQNUTO-PUzgZQpEg2CQ-o"; // tu sheet id
+  const GID = 0; // si usás otra hoja, cambiá
+  // URL JSONP (google devuelve google.visualization.Query.setResponse(...))
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json&tq=&_=${Date.now()}`;
 
-function parseCSV(text) {
-  return text.trim().split("\n").map(r => r.split(","));
-}
+  const loader = document.getElementById('loader');
+  const grid = document.getElementById('grid');
+  const errBox = document.getElementById('err');
+  const status = document.getElementById('status');
 
-fetch(CSV_URL)
-  .then(r => r.text())
-  .then(csv => {
-    const rows = parseCSV(csv);
-    const div = document.getElementById("numeros");
+  // Preparamos el namespace que la respuesta JSONP invocará:
+  window.google = window.google || {};
+  window.google.visualization = window.google.visualization || {};
+  // Aquí Google llamará a setResponse(obj)
+  window.google.visualization.Query = window.google.visualization.Query || {};
+  window.google.visualization.Query.setResponse = function(response) {
+    try {
+      // la estructura viene en response.table.rows
+      const rows = (response && response.table && response.table.rows) || [];
+      const vendidos = new Set();
 
-    rows.forEach((fila, i) => {
-      if (i === 0) return;
+      rows.forEach(r => {
+        const cells = (r.c || []).map(c => c ? (c.v ?? '') : '');
+        // si las 4 primeras columnas existen y no están vacías => marcado
+        if (cells.length >= 4 && cells.slice(0,4).every(v => String(v).trim() !== '')) {
+          const n = Number(cells[3]); // columna D -> índice 3
+          if (!Number.isNaN(n) && n >= 1 && n <= 200) vendidos.add(n);
+        }
+      });
 
-      const dni = fila[0].trim();
-      const nombre = fila[1].trim();
-      const contacto = fila[2].trim();
-      const numero = fila[3].trim();
+      renderGrid(vendidos);
+      loader.style.display = 'none';
+      status.textContent = `Cargados: ${rows.length} filas. Marcados: ${vendidos.size} números.`;
+    } catch(e) {
+      showError('Error procesando la respuesta: ' + e.message);
+    }
+  };
 
-      const complete = dni && nombre && contacto && numero;
+  // fallback si el script no carga
+  const failTimeout = setTimeout(()=> {
+    showError('No se pudo cargar la respuesta de Google (timeout). Reintentá refrescando la página.');
+    loader.style.display = 'none';
+  }, 15000); // 15s
 
-      const bubble = document.createElement("div");
-      bubble.className = "numero" + (complete ? " completo" : "");
-      bubble.textContent = numero;
+  // inserto el script JSONP
+  const s = document.createElement('script');
+  s.src = url;
+  s.async = true;
+  s.onload = () => { clearTimeout(failTimeout); /* la respuesta llamará setResponse */ };
+  s.onerror = () => {
+    clearTimeout(failTimeout);
+    showError('Error cargando el script JSONP de Google. Revisá que la hoja esté "Publicada en la web" y accesible.');
+    loader.style.display = 'none';
+  };
+  document.head.appendChild(s);
 
-      div.appendChild(bubble);
-    });
-  })
-  .catch(err => {
-    document.body.innerHTML += "<p>Error fatal: el universo otra vez en tu contra.</p>";
-  });
+  function renderGrid(vendidosSet) {
+    grid.innerHTML = '';
+    for (let i=1; i<=200; i++) {
+      const d = document.createElement('div');
+      d.className = 'cell' + (vendidosSet.has(i) ? ' sold' : '');
+      d.textContent = i;
+      grid.appendChild(d);
+    }
+  }
+
+  function showError(msg) {
+    errBox.style.display = 'block';
+    errBox.textContent = msg;
+    console.error(msg);
+    status.textContent = 'Error — ver detalle arriba.';
+  }
+
+})();
 </script>
-
 </body>
 </html>
