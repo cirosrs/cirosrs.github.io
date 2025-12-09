@@ -5,16 +5,47 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Sorteo 200 - JSONP (sin CORS)</title>
 <style>
-  body{font-family:Arial,Helvetica,sans-serif;background:#f5f7fa;margin:0;padding:20px;text-align:center;color:#222}
-  h1{margin:0 0 8px}
-  #loader{width:56px;height:56px;border:6px solid #e0e0e0;border-top-color:#2196f3;border-radius:50%;animation:spin 1s linear infinite;margin:28px auto}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:12px;max-width:1100px;margin:16px auto}
-  .cell{width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e0e0e0;font-weight:700;font-size:18px;color:#222;border:2px solid rgba(0,0,0,0.06);box-shadow:0 2px 4px rgba(0,0,0,0.04);transition:transform .12s}
-  .cell.sold{background:#2e7d32;color:#fff;border-color:rgba(0,0,0,0.12);box-shadow:0 6px 14px rgba(46,125,50,0.18);transform:translateY(-3px)}
-  #status{color:#555;font-size:14px;margin-top:6px}
-  #err{display:none;background:#ffecec;color:#900;padding:10px;border-radius:6px;max-width:900px;margin:8px auto}
+    body { 
+        background: linear-gradient(135deg, #ffecd2, #fcb69f);
+        font-family: Arial, sans-serif;
+        padding: 20px; 
+    }
+
+    #numeros { 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 14px; 
+        justify-content: center; 
+    }
+
+    .numero {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: #ffffffcc;
+        border: 3px solid #e3c4a8;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 24px;
+        font-weight: bold;
+        color: #5a4637;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        transition: transform .15s ease;
+    }
+
+    .numero:hover {
+        transform: scale(1.08);
+    }
+
+    .completo {
+        background: #ff5f6d;
+        background: linear-gradient(135deg, #ff5f6d, #ffc371);
+        border-color: #c54d49;
+        color: white;
+    }
 </style>
+
 </head>
 <body>
   <h1>Sorteo — 1 a 200</h1>
