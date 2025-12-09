@@ -19,29 +19,41 @@
     }
 
     .contenedor {
-        max-width: 800px;
+        max-width: 900px;
         margin: auto;
         background: #ffffffaa;
         padding: 20px;
         border-radius: 12px;
         box-shadow: 0 0 12px #0003;
-        backdrop-filter: blur(5px);
+        backdrop-filter: blur(4px);
     }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 15px;
+        justify-items: center;
+        margin-top: 20px;
     }
 
-    th, td {
-        padding: 12px;
-        border: 1px solid #d9c1a3;
-        text-align: center;
+    .num {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        background: #d9d9d9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 20px;
+        font-weight: bold;
+        border: 2px solid #999;
+        transition: 0.3s;
     }
 
-    th {
-        background: #ffdeb9;
+    .completo {
+        background: #6fdc6f;
+        border-color: #2a7d2a;
+        color: #003300;
     }
 
     .error {
@@ -60,14 +72,30 @@
 <h1>Rifas Ciro</h1>
 
 <div class="contenedor">
-    <table id="tabla"></table>
+    <div id="cuadricula" class="grid"></div>
     <div id="error" class="error">Connection Failure: No se pudo cargar el archivo.</div>
 </div>
 
 <script>
-    async function cargarCSV() {
-        const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQA63Z-H9RKQrD0Cubr0HcX3_FK5CTkjJTTzYO3shHFiSXA2U9qGAnMqQIgJ3cBEBJVExYypESNriOD/pub?gid=0&single=true&output=csv";
+    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQA63Z-H9RKQrD0Cubr0HcX3_FK5CTkjJTTzYO3shHFiSXA2U9qGAnMqQIgJ3cBEBJVExYypESNriOD/pub?gid=0&single=true&output=csv";
 
+    const TOTAL = 200;
+
+    // Creamos los 200 círculos
+    function crearCirculos() {
+        const cont = document.getElementById("cuadricula");
+        cont.innerHTML = "";
+
+        for (let i = 1; i <= TOTAL; i++) {
+            const div = document.createElement("div");
+            div.className = "num";
+            div.id = "num" + i;
+            div.textContent = i;
+            cont.appendChild(div);
+        }
+    }
+
+    async function cargarCSV() {
         try {
             const res = await fetch(url, { cache: "no-store" });
             if (!res.ok) throw new Error();
@@ -75,24 +103,28 @@
             const texto = await res.text();
             const filas = texto.trim().split("\n").map(f => f.split(","));
 
-            const tabla = document.getElementById("tabla");
-            tabla.innerHTML = "";
+            // ignoramos la fila 0 (títulos)
+            for (let i = 1; i < filas.length; i++) {
+                const cols = filas[i];
 
-            filas.forEach((fila, i) => {
-                const tr = document.createElement("tr");
-                fila.forEach(col => {
-                    const celda = document.createElement(i === 0 ? "th" : "td");
-                    celda.textContent = col;
-                    tr.appendChild(celda);
-                });
-                tabla.appendChild(tr);
-            });
+                const numero = parseInt(cols[0]); // primera columna es el número
 
-        } catch (e) {
+                if (!isNaN(numero) && numero >= 1 && numero <= TOTAL) {
+                    // Verificar si las 4 columnas están completas
+                    const completas = cols[0] && cols[1] && cols[2] && cols[3];
+
+                    if (completas) {
+                        document.getElementById("num" + numero).classList.add("completo");
+                    }
+                }
+            }
+
+        } catch {
             document.getElementById("error").style.display = "block";
         }
     }
 
+    crearCirculos();
     cargarCSV();
     setInterval(cargarCSV, 15000);
 </script>
