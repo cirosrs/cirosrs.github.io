@@ -1,104 +1,101 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Sorteo 200 - JSONP (sin CORS)</title>
+<meta charset="UTF-8">
+<title>Rifas Ciro</title>
 <style>
-  body{font-family:Arial,Helvetica,sans-serif;background:#f5f7fa;margin:0;padding:20px;text-align:center;color:#222}
-  h1{margin:0 0 8px}
-  #loader{width:56px;height:56px;border:6px solid #e0e0e0;border-top-color:#2196f3;border-radius:50%;animation:spin 1s linear infinite;margin:28px auto}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:12px;max-width:1100px;margin:16px auto}
-  .cell{width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e0e0e0;font-weight:700;font-size:18px;color:#222;border:2px solid rgba(0,0,0,0.06);box-shadow:0 2px 4px rgba(0,0,0,0.04);transition:transform .12s}
-  .cell.sold{background:#2e7d32;color:#fff;border-color:rgba(0,0,0,0.12);box-shadow:0 6px 14px rgba(46,125,50,0.18);transform:translateY(-3px)}
-  #status{color:#555;font-size:14px;margin-top:6px}
-  #err{display:none;background:#ffecec;color:#900;padding:10px;border-radius:6px;max-width:900px;margin:8px auto}
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #ffecd2, #fcb69f);
+        margin: 0;
+        padding: 20px;
+        color: #222;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: #5a2a00;
+    }
+
+    .contenedor {
+        max-width: 800px;
+        margin: auto;
+        background: #ffffffaa;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 12px #0003;
+        backdrop-filter: blur(5px);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    th, td {
+        padding: 12px;
+        border: 1px solid #d9c1a3;
+        text-align: center;
+    }
+
+    th {
+        background: #ffdeb9;
+    }
+
+    .error {
+        margin-top: 20px;
+        padding: 15px;
+        background: #ffb3b3;
+        border: 1px solid #a10000;
+        color: #600000;
+        border-radius: 8px;
+        display: none;
+    }
 </style>
 </head>
+
 <body>
-  <h1>Sorteo — 1 a 200</h1>
-  <div id="loader" aria-hidden="true"></div>
-  <div id="err"></div>
-  <div id="grid" aria-live="polite"></div>
-  <div id="status"></div>
+<h1>Rifas Ciro</h1>
+
+<div class="contenedor">
+    <table id="tabla"></table>
+    <div id="error" class="error">Connection Failure: No se pudo cargar el archivo.</div>
+</div>
 
 <script>
-(function(){
-  const SHEET_ID = "1tIPI57LEoj73SmYj31A_vrXQNUTO-PUzgZQpEg2CQ-o"; // tu sheet id
-  const GID = 0; // si usás otra hoja, cambiá
-  // URL JSONP (google devuelve google.visualization.Query.setResponse(...))
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json&tq=&_=${Date.now()}`;
+    async function cargarCSV() {
+        const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQA63Z-H9RKQrD0Cubr0HcX3_FK5CTkjJTTzYO3shHFiSXA2U9qGAnMqQIgJ3cBEBJVExYypESNriOD/pub?gid=0&single=true&output=csv";
 
-  const loader = document.getElementById('loader');
-  const grid = document.getElementById('grid');
-  const errBox = document.getElementById('err');
-  const status = document.getElementById('status');
+        try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) throw new Error();
 
-  // Preparamos el namespace que la respuesta JSONP invocará:
-  window.google = window.google || {};
-  window.google.visualization = window.google.visualization || {};
-  // Aquí Google llamará a setResponse(obj)
-  window.google.visualization.Query = window.google.visualization.Query || {};
-  window.google.visualization.Query.setResponse = function(response) {
-    try {
-      // la estructura viene en response.table.rows
-      const rows = (response && response.table && response.table.rows) || [];
-      const vendidos = new Set();
+            const texto = await res.text();
+            const filas = texto.trim().split("\n").map(f => f.split(","));
 
-      rows.forEach(r => {
-        const cells = (r.c || []).map(c => c ? (c.v ?? '') : '');
-        // si las 4 primeras columnas existen y no están vacías => marcado
-        if (cells.length >= 4 && cells.slice(0,4).every(v => String(v).trim() !== '')) {
-          const n = Number(cells[3]); // columna D -> índice 3
-          if (!Number.isNaN(n) && n >= 1 && n <= 200) vendidos.add(n);
+            const tabla = document.getElementById("tabla");
+            tabla.innerHTML = "";
+
+            filas.forEach((fila, i) => {
+                const tr = document.createElement("tr");
+                fila.forEach(col => {
+                    const celda = document.createElement(i === 0 ? "th" : "td");
+                    celda.textContent = col;
+                    tr.appendChild(celda);
+                });
+                tabla.appendChild(tr);
+            });
+
+        } catch (e) {
+            document.getElementById("error").style.display = "block";
         }
-      });
-
-      renderGrid(vendidos);
-      loader.style.display = 'none';
-      status.textContent = `Cargados: ${rows.length} filas. Marcados: ${vendidos.size} números.`;
-    } catch(e) {
-      showError('Error procesando la respuesta: ' + e.message);
     }
-  };
 
-  // fallback si el script no carga
-  const failTimeout = setTimeout(()=> {
-    showError('No se pudo cargar la respuesta de Google (timeout). Reintentá refrescando la página.');
-    loader.style.display = 'none';
-  }, 15000); // 15s
-
-  // inserto el script JSONP
-  const s = document.createElement('script');
-  s.src = url;
-  s.async = true;
-  s.onload = () => { clearTimeout(failTimeout); /* la respuesta llamará setResponse */ };
-  s.onerror = () => {
-    clearTimeout(failTimeout);
-    showError('Error cargando el script JSONP de Google. Revisá que la hoja esté "Publicada en la web" y accesible.');
-    loader.style.display = 'none';
-  };
-  document.head.appendChild(s);
-
-  function renderGrid(vendidosSet) {
-    grid.innerHTML = '';
-    for (let i=1; i<=200; i++) {
-      const d = document.createElement('div');
-      d.className = 'cell' + (vendidosSet.has(i) ? ' sold' : '');
-      d.textContent = i;
-      grid.appendChild(d);
-    }
-  }
-
-  function showError(msg) {
-    errBox.style.display = 'block';
-    errBox.textContent = msg;
-    console.error(msg);
-    status.textContent = 'Error — ver detalle arriba.';
-  }
-
-})();
+    cargarCSV();
+    setInterval(cargarCSV, 15000);
 </script>
+
 </body>
 </html>
